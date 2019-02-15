@@ -2,22 +2,37 @@ package com.mta.location.main.Objects;
 
 import android.location.Location;
 
+import com.google.gson.annotations.SerializedName;
+
 public class LocationData {
+
+    @SerializedName("user_id")
+    private double userId;
     private float accuracy;
     private double altitude;
+
+    @SerializedName("lat")
     private double latitude;
+
+    @SerializedName("lon")
     private double longitude;
     private float speed;
     private float speedAccuracy;
-    //TODO add date
+    private double timestamp;
 
-    public LocationData(Location location) {
+    public LocationData(Location location, double userId) {
+        this.userId = userId;
         this.accuracy = location.getAccuracy();
         this.altitude = location.getAltitude();
         this.latitude = location.getLatitude();
         this.longitude = location.getLongitude();
         this.speed = location.getSpeed();
         this.speedAccuracy = location.getAccuracy();
+        this.timestamp = location.getTime();
+    }
+
+    public double getUserId() {
+        return userId;
     }
 
     public float getAccuracy() {
@@ -42,5 +57,9 @@ public class LocationData {
 
     public float getSpeedAccuracy() {
         return speedAccuracy;
+    }
+
+    public double getTimestamp() {
+        return timestamp;
     }
 }
