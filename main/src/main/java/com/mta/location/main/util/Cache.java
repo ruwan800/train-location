@@ -13,6 +13,7 @@ public class Cache {
     private static final String LOCATION_LAT = "_LOCATION_LAT";
     private static final String LOCATION_LON = "_LOCATION_LON";
     private static final String LOCATION_PROVIDER = "_LOCATION_PROVIDER";
+    public static final String USER_ID = "USER_ID";
 
     public static void put(Context context, String key, String value) {
         SharedPreferences.Editor editor = getEditor(context, key);

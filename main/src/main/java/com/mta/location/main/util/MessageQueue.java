@@ -37,6 +37,6 @@ public class MessageQueue {
     }
 
     public void putMessage(int type, String value) {
-        messages.add(new Message(type, value));
+        messages.add(0, new Message(type, value));
     }
 }

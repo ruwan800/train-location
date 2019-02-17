@@ -2,7 +2,7 @@ package com.mta.location.main.Objects;
 
 import com.google.gson.annotations.SerializedName;
 
-public class Train {
+public class Station {
 
     @SerializedName("_id")
     private double id;
@@ -12,7 +12,7 @@ public class Train {
 
     private double position;
 
-    private double velocity;
+    private String name;
 
 
     public double getId() {
@@ -27,17 +27,14 @@ public class Train {
         return position;
     }
 
-    public double getVelocity() {
-        return velocity;
+    public String getName() {
+        return name;
     }
 
     @Override
     public String toString() {
-        return "TRAIN::{id=" + (int)id +
-                ", line=" + lineId +
-                ", pos=" + round(position)+
-                ", v=" + round(velocity) +
-                '}';
+        return lineId + ":" + name +
+                ", pos=" + round(position);
     }
 
     private double round(double val) {
