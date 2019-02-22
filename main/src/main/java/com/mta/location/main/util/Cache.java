@@ -14,6 +14,9 @@ public class Cache {
     private static final String LOCATION_LON = "_LOCATION_LON";
     private static final String LOCATION_PROVIDER = "_LOCATION_PROVIDER";
     public static final String USER_ID = "USER_ID";
+    public static final String IS_LOCATION_UPDATING = "IS_LOCATION_UPDATING";
+    public static final String LAST_SUCCESSFUL_UPDATE = "LAST_SUCCESSFUL_UPDATE";
+    public static final String LINE_ID = "LINE_ID";
 
     public static void put(Context context, String key, String value) {
         SharedPreferences.Editor editor = getEditor(context, key);
@@ -73,6 +76,21 @@ public class Cache {
     public static int getInt(Context context, String key, int defVal) {
         SharedPreferences prefs = context.getSharedPreferences(key, MODE_PRIVATE);
         return prefs.getInt(key, defVal);
+    }
+
+    public static boolean getBoolean(Context context, String key, boolean defVal) {
+        SharedPreferences prefs = context.getSharedPreferences(key, MODE_PRIVATE);
+        return prefs.getBoolean(key, defVal);
+    }
+
+    public static long getLong(Context context, String key, long defVal) {
+        SharedPreferences prefs = context.getSharedPreferences(key, MODE_PRIVATE);
+        return prefs.getLong(key, defVal);
+    }
+
+    public static float getFloat(Context context, String key, long defVal) {
+        SharedPreferences prefs = context.getSharedPreferences(key, MODE_PRIVATE);
+        return prefs.getFloat(key, defVal);
     }
 
     public static Location getLocation(Context context, String key) {

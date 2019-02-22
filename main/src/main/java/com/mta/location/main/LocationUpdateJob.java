@@ -10,6 +10,10 @@ import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 
+import com.mta.location.main.util.Cache;
+
+import java.util.Date;
+
 import static com.mta.location.main.util.Config.TAG;
 
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -25,18 +29,23 @@ public class LocationUpdateJob extends JobService {
     @Override
     public boolean onStopJob(JobParameters params) {
         Log.e(TAG, "Job stop");
-        Location.getInstance(getApplicationContext()).stopLocationUpdates();
+        Context context = getApplicationContext();
+        Location.getInstance(context).stopLocationUpdates(context);
         return false;
     }
 
     private static void startLocationUpdate(Context context) {
         Location instance = Location.getInstance(context);
-        if (!instance.isLocationUpdating()) {
-            instance.startLocationUpdates(context);
+        if(Location.isLocationUpdating(context)) {
+            if (!instance.isRunning()) {
+                instance.startLocationUpdates(context);
+            }
         }
     }
 
     public static void scheduleJob(Context context) {
+        Location.setLastUpdated(context, new Date().getTime());
+        Cache.put(context, Cache.IS_LOCATION_UPDATING, true);
         JobScheduler jobScheduler = (JobScheduler) context.getSystemService(JOB_SCHEDULER_SERVICE);
         ComponentName componentName = new ComponentName(context, LocationUpdateJob.class);
         JobInfo jobInfoObj = new JobInfo.Builder(1, componentName)

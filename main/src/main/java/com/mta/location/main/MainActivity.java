@@ -17,8 +17,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewTreeObserver;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
+import android.widget.ScrollView;
+import android.widget.Spinner;
+import android.widget.Switch;
 
 import com.android.volley.VolleyError;
 import com.google.gson.Gson;
@@ -34,6 +41,7 @@ import com.mta.location.main.util.Http;
 import org.json.JSONObject;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -45,6 +53,9 @@ public class MainActivity extends AppCompatActivity {
     private Gson gson;
     private DrawerLayout mDrawerLayout;
     private ConstraintLayout mainContainerCL;
+    private int lineId = 3;
+    private List<Station> stations = new ArrayList<>();
+    private List<Train> trains = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,13 +93,15 @@ public class MainActivity extends AppCompatActivity {
 
         final String url = Config.SITE + "api/public/stations";
         Http.sendGetRequest(this, url, new Http.ResponseHandler() {
+
             @Override
             public void onSuccess(JSONObject response) {
                 Type type = new TypeToken<Res<List<Station>>>() {}.getType();
                 Res<List<Station>> res = gson.fromJson(response.toString(), type);
                 List<Station> stations = res.getData();
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                    updateUiOnStations(stations);
+                    MainActivity.this.stations = stations;
+                    updateUiOnStations();
                 }
             }
 
@@ -97,7 +110,48 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, error.getMessage());
             }
         });
+
         startLocationUpdates();
+
+        Spinner spinner = (Spinner) findViewById(R.id.lines_spinner);
+        // Create an ArrayAdapter using the string array and a default spinner layout
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.line_array, android.R.layout.simple_spinner_item);
+        // Specify the layout to use when the list of choices appears
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        // Apply the adapter to the spinner
+        spinner.setAdapter(adapter);
+        spinner.setSelection(getLine() - 1);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                lineId = i +1;
+                setLine(i +1);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    updateUiOnStations();
+                    scrollToTop();
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+
+
+        Switch trackSwitch = findViewById(R.id.trackSwitch);
+        trackSwitch.setChecked(true);
+        trackSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if(b) {
+                    startLocationUpdates();
+                } else {
+                    Location.getInstance(MainActivity.this).stopLocationUpdates(MainActivity.this);
+                }
+            }
+        });
     }
 
     @Override
@@ -141,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void runUpdateTask() {
         final Handler handler = new Handler();
-        final int delay = 5000; //milliseconds
+        final int delay = 10000; //milliseconds
         final String url = Config.SITE + "api/public/trains";
 
         handler.postDelayed(new Runnable(){
@@ -152,6 +206,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onSuccess(JSONObject response) {
                         Type type = new TypeToken<Res<List<Train>>>() {}.getType();
                         Res<List<Train>> res = gson.fromJson(response.toString(), type);
+                        trains = res.getData();
                     }
 
                     @Override
@@ -159,24 +214,67 @@ public class MainActivity extends AppCompatActivity {
                         Log.e(TAG, error.getMessage());
                     }
                 });
-                updateUI();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    updateUI();
+                }
                 Log.i("MTA", "5s schedule");
                 handler.postDelayed(this, delay);
             }
         }, delay);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
     private void updateUI() {
+        mainContainerCL.removeViews(1, mainContainerCL.getChildCount() - 1);
+        updateUiOnStations();
+        int childCount = mainContainerCL.getChildCount();
+//        trains.clear();
+//        trains.add(new Train(1, 3, 20, 30));
+//        trains.add(new Train(1, 3, 10, -30));
+//        trains.add(new Train(1, 3, 30, -10));
+//        trains.add(new Train(1, 3, 40, 20));
+//        trains.add(new Train(1, 3, 50, 40));
+        for (Train train : trains) {
+            if(train.getLineId() != lineId) {
+                continue;
+            }
+            Log.i(TAG, train.toString());
+
+            ImageView imageView = new ImageView(this);
+            if(4 < train.getVelocity()) {
+                imageView.setImageResource(R.drawable.train_down);
+            } else if(train.getVelocity() < -4) {
+                imageView.setImageResource(R.drawable.train_up);
+            } else {
+                imageView.setImageResource(R.drawable.train);
+            }
+            imageView.setId(View.generateViewId());
+            //ConstraintLayout.LayoutParams lp = new ConstraintLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+            //lp.topToTop = (int) train.getPosition();
+            //lp.leftToLeft = 0;
+            //mainContainerCL.addView(view, lp);
+
+
+            ConstraintSet set = new ConstraintSet();
+
+            //ImageView view = new ImageView(this);
+            mainContainerCL.addView(imageView, childCount);
+            set.clone(mainContainerCL);
+            int margin = 100 * ((int) train.getPosition());
+            set.connect(imageView.getId(), ConstraintSet.TOP, mainContainerCL.getId(), ConstraintSet.TOP, margin);
+            set.applyTo(mainContainerCL);
+        }
     }
 
 
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
-    private void updateUiOnStations(List<Station> stations) {
+    private void updateUiOnStations() {
+        mainContainerCL.removeViews(1, mainContainerCL.getChildCount() - 1);
         ImageView tv = findViewById(R.id.trackIV);
         int max = 0;
         for (Station station : stations) {
-            if(station.getLineId() != 3) {
+            if(station.getLineId() != lineId) {
                 continue;
             }
             Log.i(TAG, station.toString());
@@ -204,5 +302,25 @@ public class MainActivity extends AppCompatActivity {
             set.applyTo(mainContainerCL);
         }
         tv.setMinimumHeight(max);
+    }
+
+    private void scrollToTop() {
+        final ScrollView scrollView = findViewById(R.id.scrollView);
+        scrollView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+            @Override
+            public void onGlobalLayout() {
+                scrollView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                scrollView.fullScroll(View.FOCUS_UP);
+            }
+        });
+    }
+
+    private void setLine(int lineId) {
+        Cache.put(this, Cache.LINE_ID, lineId);
+    }
+
+    private int getLine() {
+        return Cache.getInt(this, Cache.LINE_ID, 3);
     }
 }

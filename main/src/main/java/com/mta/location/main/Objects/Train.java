@@ -31,6 +31,13 @@ public class Train {
         return velocity;
     }
 
+    public Train(double id, int lineId, double position, double velocity) {
+        this.id = id;
+        this.lineId = lineId;
+        this.position = position;
+        this.velocity = velocity;
+    }
+
     @Override
     public String toString() {
         return "TRAIN::{id=" + (int)id +

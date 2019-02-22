@@ -32,10 +32,10 @@ public class Location {
     private static Location instance;
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationCallback mLocationCallback;
-    private boolean isLocationUpdating;
     private LocationRequest mLocationRequest;
     private static final String PREVIOUS_LOCATION = "previous_location";
     private boolean isLogging = false;
+    private boolean isRunning = false;
     private int userId;
 
     private Location() {}
@@ -77,6 +77,9 @@ public class Location {
                                 MessageQueue messageQueue = MessageQueue.getInstance();
                                 messageQueue.putMessage(1, res.getMessage());
                             }
+                            if(0 < res.getStatus()) {
+                                setLastUpdated(context, new Date().getTime());
+                            }
                         }
 
                         @Override
@@ -103,21 +106,32 @@ public class Location {
 
     public void startLocationUpdates(Context context) {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            isLocationUpdating = true;
             mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, null /* Looper */);
+            isRunning = true;
         }
     }
 
-    public void stopLocationUpdates() {
-        isLocationUpdating = false;
+    public void stopLocationUpdates(Context context) {
+        isRunning = false;
         mFusedLocationClient.removeLocationUpdates(mLocationCallback);
+        Cache.put(context, Cache.IS_LOCATION_UPDATING, false);
     }
 
     public void setLogging(boolean logging) {
         isLogging = logging;
     }
 
-    public boolean isLocationUpdating() {
-        return isLocationUpdating;
+    public boolean isRunning() {
+        return isRunning;
+    }
+
+    public static boolean isLocationUpdating(Context context) {
+        boolean updating = Cache.getBoolean(context, Cache.IS_LOCATION_UPDATING, false);
+        float lastUpdated = Cache.getFloat(context, Cache.LAST_SUCCESSFUL_UPDATE, 0);
+        return (updating && new Date().getTime() - 10*60*1000 < lastUpdated);
+    }
+
+    public static void setLastUpdated(Context context, long timestamp) {
+        Cache.put(context, Cache.LAST_SUCCESSFUL_UPDATE, timestamp);
     }
 }

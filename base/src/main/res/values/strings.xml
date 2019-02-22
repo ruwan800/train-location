@@ -1,4 +1,17 @@
 <resources>
     <string name="app_name">Train Location</string>
     <string name="title_activity_logging">LoggingActivity</string>
+    <string-array name="line_array">
+        <item>Coastal Line</item>
+        <item>Puttalam Line</item>
+        <item>Main Line</item>
+        <item>Mihintale Branch</item>
+        <item>Northern Line</item>
+        <item>Kelani Valley Railway</item>
+        <item>Mannar Line</item>
+        <item>Maho - Galoya</item>
+        <item>Trincomalee Line</item>
+        <item>Batticaloa Line</item>
+        <item>Matale Line</item>
+    </string-array>
 </resources>
