@@ -127,7 +127,7 @@ public class Location {
 
     public static boolean isLocationUpdating(Context context) {
         boolean updating = Cache.getBoolean(context, Cache.IS_LOCATION_UPDATING, false);
-        float lastUpdated = Cache.getFloat(context, Cache.LAST_SUCCESSFUL_UPDATE, 0);
+        long lastUpdated = Cache.getLong(context, Cache.LAST_SUCCESSFUL_UPDATE, 0);
         return (updating && new Date().getTime() - 10*60*1000 < lastUpdated);
     }
 

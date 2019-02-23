@@ -42,7 +42,7 @@ public class Cache {
         editor.apply();
     }
 
-    public static void put(Context context, String key, Long value) {
+    public static void put(Context context, String key, long value) {
         SharedPreferences.Editor editor = getEditor(context, key);
         editor.putLong(key, value);
         editor.apply();

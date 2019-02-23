@@ -7,17 +7,19 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.support.annotation.RequiresApi;
 import android.support.constraint.ConstraintLayout;
 import android.support.constraint.ConstraintSet;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.transition.ChangeBounds;
+import android.transition.TransitionManager;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewTreeObserver;
+import android.view.animation.LinearInterpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -37,25 +39,33 @@ import com.mta.location.main.Objects.Train;
 import com.mta.location.main.util.Cache;
 import com.mta.location.main.util.Config;
 import com.mta.location.main.util.Http;
+import com.mta.location.main.util.ViewIdGenerator;
 
 import org.json.JSONObject;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static android.view.View.inflate;
 import static com.mta.location.main.util.Config.TAG;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TRAINS_LAST_UPDATED = "trains_last_updated";
+    private static final String TRAIN_URL = Config.SITE + "api/public/trains";
+
     private Gson gson;
     private DrawerLayout mDrawerLayout;
     private ConstraintLayout mainContainerCL;
+    private ImageView trackIV;
     private int lineId = 3;
     private List<Station> stations = new ArrayList<>();
     private List<Train> trains = new ArrayList<>();
+    private Map<Train, View> trainViewMap = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         mDrawerLayout = findViewById(R.id.drawer_layout);
         mainContainerCL = findViewById(R.id.mainContainerCL);
+        trackIV = findViewById(R.id.trackIV);
 
         GsonBuilder gsonBuilder = new GsonBuilder();
         //gsonBuilder.setDateFormat("M/d/yy hh:mm a");
@@ -101,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
                 List<Station> stations = res.getData();
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                     MainActivity.this.stations = stations;
-                    updateUiOnStations();
+                    updateLineViews();
                 }
             }
 
@@ -128,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
                 lineId = i +1;
                 setLine(i +1);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                    updateUiOnStations();
+                    updateLineViews();
                     scrollToTop();
                 }
             }
@@ -195,83 +206,92 @@ public class MainActivity extends AppCompatActivity {
 
     private void runUpdateTask() {
         final Handler handler = new Handler();
-        final int delay = 10000; //milliseconds
-        final String url = Config.SITE + "api/public/trains";
+        final int delay = 1000; //milliseconds
 
         handler.postDelayed(new Runnable(){
             public void run(){
-                //do something
-                Http.sendGetRequest(MainActivity.this, url, new Http.ResponseHandler() {
-                    @Override
-                    public void onSuccess(JSONObject response) {
-                        Type type = new TypeToken<Res<List<Train>>>() {}.getType();
-                        Res<List<Train>> res = gson.fromJson(response.toString(), type);
-                        trains = res.getData();
-                    }
+                final long time = new Date().getTime();
+                long prevTime = Cache.getLong(getBaseContext(), TRAINS_LAST_UPDATED, 0);
+                if(1000*5 <= time - prevTime) {
+                    Log.i("MTA", "5s schedule");
+                    Http.sendGetRequest(MainActivity.this, TRAIN_URL, new Http.ResponseHandler() {
+                        @Override
+                        public void onSuccess(JSONObject response) {
+                            Type type = new TypeToken<Res<List<Train>>>() {}.getType();
+                            Res<List<Train>> res = gson.fromJson(response.toString(), type);
+                            trains = res.getData();
+                            Cache.put(MainActivity.this, TRAINS_LAST_UPDATED, time);
+                        }
 
-                    @Override
-                    public void onError(VolleyError error) {
-                        Log.e(TAG, error.getMessage());
-                    }
-                });
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                    updateUI();
+                        @Override
+                        public void onError(VolleyError error) {
+                            Log.e(TAG, error.getMessage());
+                        }
+                    });
                 }
-                Log.i("MTA", "5s schedule");
+                updateTrainViews(time);
                 handler.postDelayed(this, delay);
             }
         }, delay);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
-    private void updateUI() {
-        mainContainerCL.removeViews(1, mainContainerCL.getChildCount() - 1);
-        updateUiOnStations();
-        int childCount = mainContainerCL.getChildCount();
-//        trains.clear();
-//        trains.add(new Train(1, 3, 20, 30));
-//        trains.add(new Train(1, 3, 10, -30));
-//        trains.add(new Train(1, 3, 30, -10));
-//        trains.add(new Train(1, 3, 40, 20));
-//        trains.add(new Train(1, 3, 50, 40));
+    private void updateLineViews() {
+        removeAllViews();
+        updateStationViews();
+
+    }
+
+    private void updateTrainViews(long time) {
+        List<Train> trainsByLine = new ArrayList<>();
         for (Train train : trains) {
-            if(train.getLineId() != lineId) {
-                continue;
+            if(train.getLineId() == lineId) {
+                trainsByLine.add(train);
             }
+        }
+        for (Map.Entry<Train, View> entry : trainViewMap.entrySet()) {
+            if(!trainsByLine.contains(entry.getKey())) {
+                mainContainerCL.removeView(entry.getValue());
+                trainViewMap.remove(entry.getKey());
+            }
+        }
+
+        for (Train train : trainsByLine) {
             Log.i(TAG, train.toString());
 
-            ImageView imageView = new ImageView(this);
-            if(4 < train.getVelocity()) {
-                imageView.setImageResource(R.drawable.train_down);
-            } else if(train.getVelocity() < -4) {
-                imageView.setImageResource(R.drawable.train_up);
-            } else {
-                imageView.setImageResource(R.drawable.train);
+            ImageView view = (ImageView) trainViewMap.get(train);
+            if(view == null) {
+                int childCount = mainContainerCL.getChildCount();
+                view = new ImageView(this);
+                view.setId(ViewIdGenerator.generateViewId());
+                mainContainerCL.addView(view, childCount);
+                trainViewMap.put(train, view);
             }
-            imageView.setId(View.generateViewId());
-            //ConstraintLayout.LayoutParams lp = new ConstraintLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-            //lp.topToTop = (int) train.getPosition();
-            //lp.leftToLeft = 0;
-            //mainContainerCL.addView(view, lp);
 
+            if(4 < train.getVelocity()) {
+                view.setImageResource(R.drawable.train_down);
+            } else if(-4 <= train.getVelocity()) {
+                view.setImageResource(R.drawable.train);
+            } else {
+                view.setImageResource(R.drawable.train_up);
+            }
 
             ConstraintSet set = new ConstraintSet();
-
-            //ImageView view = new ImageView(this);
-            mainContainerCL.addView(imageView, childCount);
             set.clone(mainContainerCL);
-            int margin = 100 * ((int) train.getPosition());
-            set.connect(imageView.getId(), ConstraintSet.TOP, mainContainerCL.getId(), ConstraintSet.TOP, margin);
+            double extraDistance = train.getVelocity() / 1000 * ((time - train.getTimestamp()) / 1000.0);
+            int margin = (int) (100 * (train.getPosition() + extraDistance));
+            set.connect(view.getId(), ConstraintSet.TOP, mainContainerCL.getId(), ConstraintSet.TOP, margin);
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
+                ChangeBounds transition = new ChangeBounds();
+                transition.setInterpolator(new LinearInterpolator());
+                transition.setDuration(1000);
+                TransitionManager.beginDelayedTransition(mainContainerCL ,transition);
+            }
             set.applyTo(mainContainerCL);
         }
     }
 
-
-
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
-    private void updateUiOnStations() {
-        mainContainerCL.removeViews(1, mainContainerCL.getChildCount() - 1);
-        ImageView tv = findViewById(R.id.trackIV);
+    private void updateStationViews() {
         int max = 0;
         for (Station station : stations) {
             if(station.getLineId() != lineId) {
@@ -282,7 +302,7 @@ public class MainActivity extends AppCompatActivity {
             View view = inflate(this, R.layout.station, null);
             Button stationNameButton = view.findViewById(R.id.name);
             stationNameButton.setText(station.getName());
-            view.setId(View.generateViewId());
+            view.setId(ViewIdGenerator.generateViewId());
             //ConstraintLayout.LayoutParams lp = new ConstraintLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
             //lp.topToTop = (int) station.getPosition();
             //lp.leftToLeft = 0;
@@ -301,19 +321,24 @@ public class MainActivity extends AppCompatActivity {
             set.connect(view.getId(), ConstraintSet.TOP, mainContainerCL.getId(), ConstraintSet.TOP, margin);
             set.applyTo(mainContainerCL);
         }
-        tv.setMinimumHeight(max);
+        trackIV.setMinimumHeight(max);
+    }
+
+    private void removeAllViews() {
+        mainContainerCL.removeViews(1, mainContainerCL.getChildCount() - 1);
     }
 
     private void scrollToTop() {
-        final ScrollView scrollView = findViewById(R.id.scrollView);
-        scrollView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-            @Override
-            public void onGlobalLayout() {
-                scrollView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                scrollView.fullScroll(View.FOCUS_UP);
-            }
-        });
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            final ScrollView scrollView = findViewById(R.id.scrollView);
+            scrollView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    scrollView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    scrollView.fullScroll(View.FOCUS_UP);
+                }
+            });
+        }
     }
 
     private void setLine(int lineId) {

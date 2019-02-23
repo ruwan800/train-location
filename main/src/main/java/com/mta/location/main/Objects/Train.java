@@ -5,14 +5,16 @@ import com.google.gson.annotations.SerializedName;
 public class Train {
 
     @SerializedName("_id")
-    private double id;
+    private final double id;
 
     @SerializedName("line_id")
-    private int lineId;
+    private final int lineId;
 
-    private double position;
+    private final double position;
 
-    private double velocity;
+    private final double velocity;
+
+    private final long timestamp;
 
 
     public double getId() {
@@ -31,11 +33,16 @@ public class Train {
         return velocity;
     }
 
-    public Train(double id, int lineId, double position, double velocity) {
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public Train(double id, int lineId, double position, double velocity, long timestamp) {
         this.id = id;
         this.lineId = lineId;
         this.position = position;
         this.velocity = velocity;
+        this.timestamp = timestamp;
     }
 
     @Override
@@ -44,7 +51,21 @@ public class Train {
                 ", line=" + lineId +
                 ", pos=" + round(position)+
                 ", v=" + round(velocity) +
+                ", t=" + timestamp +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Train train = (Train) o;
+        return Double.compare(train.id, id) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return Double.valueOf(id).hashCode();
     }
 
     private double round(double val) {
