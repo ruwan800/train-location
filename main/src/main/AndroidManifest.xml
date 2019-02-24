@@ -7,7 +7,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application>
-        <activity android:name=".StationActivity"></activity>
+        <activity android:name=".StationActivity"
+            android:label="@string/title_activity_station"/>
         <activity
             android:name=".TrainActivity"
             android:label="@string/title_activity_train"

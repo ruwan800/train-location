@@ -258,13 +258,13 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 //        Sample liveTrains
-        LiveTrain t1 = new LiveTrain(1, 3, 12, 0, time);
-        LiveTrain t2 = new LiveTrain(2, 3, 18, 12, time);
-        LiveTrain t3 = new LiveTrain(3, 3, 24, -20, time);
-
-        trainsByLine.add(t1);
-        trainsByLine.add(t2);
-        trainsByLine.add(t3);
+//        LiveTrain t1 = new LiveTrain(1, 3, 12, 0, time);
+//        LiveTrain t2 = new LiveTrain(2, 3, 18, 12, time);
+//        LiveTrain t3 = new LiveTrain(3, 3, 24, -20, time);
+//
+//        trainsByLine.add(t1);
+//        trainsByLine.add(t2);
+//        trainsByLine.add(t3);
 
 
         for (Map.Entry<LiveTrain, View> entry : trainViewMap.entrySet()) {
