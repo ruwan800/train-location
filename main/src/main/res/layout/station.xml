@@ -8,11 +8,9 @@
 
     <ImageView
         android:id="@+id/station"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginLeft="4dp"
-        android:layout_marginBottom="12dp"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginLeft="2dp"
         android:background="@drawable/ic_station"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -21,16 +19,17 @@
     <Button
         android:id="@+id/name"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="28dp"
         android:layout_marginLeft="8dp"
         android:layout_marginStart="8dp"
-        android:background="@color/transparent"
+        android:background="@drawable/station_bubble"
         android:textColor="@color/seaBlue"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toEndOf="@+id/station"
         android:text="Mirigama"
-        android:textSize="24sp"
-        tools:ignore="ContentDescription" />
+        android:textSize="16sp"
+        tools:ignore="ContentDescription"
+        style="?android:attr/borderlessButtonStyle"/>
 
 
 

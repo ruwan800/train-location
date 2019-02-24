@@ -28,6 +28,7 @@ import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.Switch;
+import android.widget.TextView;
 
 import com.android.volley.VolleyError;
 import com.google.gson.Gson;
@@ -241,6 +242,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @SuppressLint("SetTextI18n")
     private void updateTrainViews(long time) {
         List<Train> trainsByLine = new ArrayList<>();
         for (Train train : trains) {
@@ -248,6 +250,16 @@ public class MainActivity extends AppCompatActivity {
                 trainsByLine.add(train);
             }
         }
+//        Sample trains
+//        Train t1 = new Train(1, 3, 12, 0, time);
+//        Train t2 = new Train(2, 3, 18, 12, time);
+//        Train t3 = new Train(3, 3, 24, -20, time);
+//
+//        trainsByLine.add(t1);
+//        trainsByLine.add(t2);
+//        trainsByLine.add(t3);
+
+
         for (Map.Entry<Train, View> entry : trainViewMap.entrySet()) {
             if(!trainsByLine.contains(entry.getKey())) {
                 mainContainerCL.removeView(entry.getValue());
@@ -258,22 +270,41 @@ public class MainActivity extends AppCompatActivity {
         for (Train train : trainsByLine) {
             Log.i(TAG, train.toString());
 
-            ImageView view = (ImageView) trainViewMap.get(train);
+            View view = trainViewMap.get(train);
             if(view == null) {
                 int childCount = mainContainerCL.getChildCount();
-                view = new ImageView(this);
+                view = inflate(this, R.layout.train, null);
                 view.setId(ViewIdGenerator.generateViewId());
                 mainContainerCL.addView(view, childCount);
                 trainViewMap.put(train, view);
             }
+            ImageView trainIv = view.findViewById(R.id.train);
+            ConstraintLayout boxCl = view.findViewById(R.id.box);
+            Button trainNameBtn = view.findViewById(R.id.train_name);
+            TextView trainSpeedTv = view.findViewById(R.id.train_speed);
 
             if(4 < train.getVelocity()) {
-                view.setImageResource(R.drawable.train_down);
+                trainIv.setImageResource(R.drawable.train_down);
+                boxCl.setBackgroundResource(R.drawable.train_bubble_down);
+                int color = getResources().getColor(R.color.trainDown);
+                trainNameBtn.setTextColor(color);
+                trainSpeedTv.setTextColor(color);
             } else if(-4 <= train.getVelocity()) {
-                view.setImageResource(R.drawable.train);
+                trainIv.setImageResource(R.drawable.train);
+                boxCl.setBackgroundResource(R.drawable.train_bubble);
+                int color = getResources().getColor(R.color.train);
+                trainNameBtn.setTextColor(color);
+                trainSpeedTv.setTextColor(color);
             } else {
-                view.setImageResource(R.drawable.train_up);
+                trainIv.setImageResource(R.drawable.train_up);
+                boxCl.setBackgroundResource(R.drawable.train_bubble_up);
+                int color = getResources().getColor(R.color.trainUp);
+                trainNameBtn.setTextColor(color);
+                trainSpeedTv.setTextColor(color);
             }
+
+            trainNameBtn.setText("Unnamed Train");
+            trainSpeedTv.setText((Math.round(Math.abs(train.getVelocity())*3.6*100)/100) + "km/h");
 
             ConstraintSet set = new ConstraintSet();
             set.clone(mainContainerCL);
