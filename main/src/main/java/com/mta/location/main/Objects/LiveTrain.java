@@ -2,7 +2,7 @@ package com.mta.location.main.Objects;
 
 import com.google.gson.annotations.SerializedName;
 
-public class Train {
+public class LiveTrain {
 
     @SerializedName("_id")
     private final double id;
@@ -15,6 +15,8 @@ public class Train {
     private final double velocity;
 
     private final long timestamp;
+
+    private final String name;
 
 
     public double getId() {
@@ -37,17 +39,26 @@ public class Train {
         return timestamp;
     }
 
-    public Train(double id, int lineId, double position, double velocity, long timestamp) {
+    public String getName() {
+        return name;
+    }
+
+    public LiveTrain(double id, int lineId, double position, double velocity, long timestamp) {
+        this(id, lineId, position, velocity, timestamp, "Unnamed Train");
+    }
+
+    public LiveTrain(double id, int lineId, double position, double velocity, long timestamp, String name) {
         this.id = id;
         this.lineId = lineId;
         this.position = position;
         this.velocity = velocity;
         this.timestamp = timestamp;
+        this.name = name;
     }
 
     @Override
     public String toString() {
-        return "TRAIN::{id=" + (int)id +
+        return "TRAIN::"+name+" {id=" + (int)id +
                 ", line=" + lineId +
                 ", pos=" + round(position)+
                 ", v=" + round(velocity) +
@@ -59,8 +70,8 @@ public class Train {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Train train = (Train) o;
-        return Double.compare(train.id, id) == 0;
+        LiveTrain liveTrain = (LiveTrain) o;
+        return Double.compare(liveTrain.id, id) == 0;
     }
 
     @Override

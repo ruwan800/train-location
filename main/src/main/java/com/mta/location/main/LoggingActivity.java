@@ -10,8 +10,8 @@ import com.android.volley.VolleyError;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.mta.location.main.Objects.LiveTrain;
 import com.mta.location.main.Objects.Res;
-import com.mta.location.main.Objects.Train;
 import com.mta.location.main.util.Config;
 import com.mta.location.main.util.Http;
 import com.mta.location.main.util.MessageQueue;
@@ -66,8 +66,8 @@ public class LoggingActivity extends AppCompatActivity {
                 Http.sendGetRequest(getBaseContext(), url, new Http.ResponseHandler() {
                     @Override
                     public void onSuccess(JSONObject response) {
-                        Type type = new TypeToken<Res<List<Train>>>() {}.getType();
-                        Res<List<Train>> res = gson.fromJson(response.toString(), type);
+                        Type type = new TypeToken<Res<List<LiveTrain>>>() {}.getType();
+                        Res<List<LiveTrain>> res = gson.fromJson(response.toString(), type);
                         messageQueue.putMessage(2, res.getData().toString());
                     }
 

@@ -17,6 +17,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.mta.location.main.Objects.LocationData;
 import com.mta.location.main.Objects.Res;
+import com.mta.location.main.Objects.Response.UserPoint;
 import com.mta.location.main.util.Cache;
 import com.mta.location.main.util.Config;
 import com.mta.location.main.util.Http;
@@ -37,6 +38,7 @@ public class Location {
     private boolean isLogging = false;
     private boolean isRunning = false;
     private int userId;
+    private UserPoint userPoint;
 
     private Location() {}
 
@@ -71,8 +73,10 @@ public class Location {
                     Http.sendPostRequest(context, updateUrl, locationData, new Http.ResponseHandler() {
                         @Override
                         public void onSuccess(JSONObject response) {
-                            Type type = new TypeToken<Res<Void>>() {}.getType();
-                            Res<Void> res = gson.fromJson(response.toString(), type);
+                            Type type = new TypeToken<Res<UserPoint>>() {}.getType();
+                            Res<UserPoint> res = gson.fromJson(response.toString(), type);
+                            UserPoint userPoint = res.getData();
+                            Location.this.userPoint = (userPoint != null && userPoint.getTrainId() == 0) ? userPoint: null;
                             if(isLogging) {
                                 MessageQueue messageQueue = MessageQueue.getInstance();
                                 messageQueue.putMessage(1, res.getMessage());
@@ -123,6 +127,10 @@ public class Location {
 
     public boolean isRunning() {
         return isRunning;
+    }
+
+    public UserPoint getUserPoint() {
+        return userPoint;
     }
 
     public static boolean isLocationUpdating(Context context) {

@@ -7,11 +7,17 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application>
+        <activity android:name=".StationActivity"></activity>
+        <activity
+            android:name=".TrainActivity"
+            android:label="@string/title_activity_train"
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".LoggingActivity"
             android:label="@string/title_activity_logging"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
-        <activity android:name=".MainActivity">
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity android:name=".MainActivity"
+            android:screenOrientation="portrait">
             <intent-filter android:order="1">
                 <action android:name="android.intent.action.VIEW" />
 

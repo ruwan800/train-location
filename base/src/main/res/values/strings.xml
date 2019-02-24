@@ -14,4 +14,5 @@
         <item>Batticaloa Line</item>
         <item>Matale Line</item>
     </string-array>
+    <string name="title_activity_train">TrainActivity</string>
 </resources>

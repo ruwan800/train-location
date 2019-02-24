@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <ImageView
+        android:id="@+id/station"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginLeft="2dp"
+        android:background="@drawable/person"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:ignore="ContentDescription,RtlHardcoded" />
+
+    <!--<Button-->
+        <!--android:id="@+id/name"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="28dp"-->
+        <!--android:layout_marginLeft="8dp"-->
+        <!--android:layout_marginStart="8dp"-->
+        <!--android:background="@drawable/station_bubble"-->
+        <!--android:textColor="@color/seaBlue"-->
+        <!--app:layout_constraintTop_toTopOf="parent"-->
+        <!--app:layout_constraintStart_toEndOf="@+id/station"-->
+        <!--android:text="Mirigama"-->
+        <!--android:textSize="16sp"-->
+        <!--tools:ignore="ContentDescription"-->
+        <!--style="?android:attr/borderlessButtonStyle"/>-->
+
+
+
+
+</android.support.constraint.ConstraintLayout>

@@ -9,21 +9,14 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-import com.mta.location.main.Objects.LocationData;
-import com.mta.location.main.Objects.Res;
-import com.mta.location.main.Objects.Train;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.lang.reflect.Type;
-import java.util.List;
-
 public class Http {
 
 
-    public static void sendPostRequest(Context context, String url, LocationData data, final ResponseHandler handler) {
+    public static <T> void sendPostRequest(Context context, String url, T data, final ResponseHandler handler) {
         Log.w("MTA", "POST:" + url);
 
 

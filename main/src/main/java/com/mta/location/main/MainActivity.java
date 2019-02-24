@@ -2,6 +2,7 @@ package com.mta.location.main;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -34,9 +35,10 @@ import com.android.volley.VolleyError;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.mta.location.main.Objects.LiveTrain;
 import com.mta.location.main.Objects.Res;
+import com.mta.location.main.Objects.Response.UserPoint;
 import com.mta.location.main.Objects.Station;
-import com.mta.location.main.Objects.Train;
 import com.mta.location.main.util.Cache;
 import com.mta.location.main.util.Config;
 import com.mta.location.main.util.Http;
@@ -52,12 +54,14 @@ import java.util.List;
 import java.util.Map;
 
 import static android.view.View.inflate;
+import static com.mta.location.main.StationActivity.STATION_ID;
+import static com.mta.location.main.TrainActivity.TRAIN_ID;
 import static com.mta.location.main.util.Config.TAG;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TRAINS_LAST_UPDATED = "trains_last_updated";
-    private static final String TRAIN_URL = Config.SITE + "api/public/trains";
+    private static final String TRAIN_URL = Config.SITE + "api/public/train/live-trains";
 
     private Gson gson;
     private DrawerLayout mDrawerLayout;
@@ -65,8 +69,9 @@ public class MainActivity extends AppCompatActivity {
     private ImageView trackIV;
     private int lineId = 3;
     private List<Station> stations = new ArrayList<>();
-    private List<Train> trains = new ArrayList<>();
-    private Map<Train, View> trainViewMap = new HashMap<>();
+    private List<LiveTrain> liveTrains = new ArrayList<>();
+    private Map<LiveTrain, View> trainViewMap = new HashMap<>();
+    private View userPointView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,19 +118,20 @@ public class MainActivity extends AppCompatActivity {
                 List<Station> stations = res.getData();
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                     MainActivity.this.stations = stations;
+                    removeAllViews();
                     updateLineViews();
                 }
             }
 
             @Override
             public void onError(VolleyError error) {
-                Log.e(TAG, error.getMessage());
+                Log.e(TAG, "Response Error", error);
             }
         });
 
         startLocationUpdates();
 
-        Spinner spinner = (Spinner) findViewById(R.id.lines_spinner);
+        Spinner spinner = findViewById(R.id.lines_spinner);
         // Create an ArrayAdapter using the string array and a default spinner layout
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.line_array, android.R.layout.simple_spinner_item);
@@ -218,19 +224,20 @@ public class MainActivity extends AppCompatActivity {
                     Http.sendGetRequest(MainActivity.this, TRAIN_URL, new Http.ResponseHandler() {
                         @Override
                         public void onSuccess(JSONObject response) {
-                            Type type = new TypeToken<Res<List<Train>>>() {}.getType();
-                            Res<List<Train>> res = gson.fromJson(response.toString(), type);
-                            trains = res.getData();
+                            Type type = new TypeToken<Res<List<LiveTrain>>>() {}.getType();
+                            Res<List<LiveTrain>> res = gson.fromJson(response.toString(), type);
+                            liveTrains = res.getData();
                             Cache.put(MainActivity.this, TRAINS_LAST_UPDATED, time);
                         }
 
                         @Override
                         public void onError(VolleyError error) {
-                            Log.e(TAG, error.getMessage());
+                            Log.e(TAG, "Response Error", error);
                         }
                     });
                 }
                 updateTrainViews(time);
+                updateUserView();
                 handler.postDelayed(this, delay);
             }
         }, delay);
@@ -244,52 +251,62 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressLint("SetTextI18n")
     private void updateTrainViews(long time) {
-        List<Train> trainsByLine = new ArrayList<>();
-        for (Train train : trains) {
-            if(train.getLineId() == lineId) {
-                trainsByLine.add(train);
+        List<LiveTrain> trainsByLine = new ArrayList<>();
+        for (LiveTrain liveTrain : liveTrains) {
+            if(liveTrain.getLineId() == lineId) {
+                trainsByLine.add(liveTrain);
             }
         }
-//        Sample trains
-//        Train t1 = new Train(1, 3, 12, 0, time);
-//        Train t2 = new Train(2, 3, 18, 12, time);
-//        Train t3 = new Train(3, 3, 24, -20, time);
-//
-//        trainsByLine.add(t1);
-//        trainsByLine.add(t2);
-//        trainsByLine.add(t3);
+//        Sample liveTrains
+        LiveTrain t1 = new LiveTrain(1, 3, 12, 0, time);
+        LiveTrain t2 = new LiveTrain(2, 3, 18, 12, time);
+        LiveTrain t3 = new LiveTrain(3, 3, 24, -20, time);
+
+        trainsByLine.add(t1);
+        trainsByLine.add(t2);
+        trainsByLine.add(t3);
 
 
-        for (Map.Entry<Train, View> entry : trainViewMap.entrySet()) {
+        for (Map.Entry<LiveTrain, View> entry : trainViewMap.entrySet()) {
             if(!trainsByLine.contains(entry.getKey())) {
                 mainContainerCL.removeView(entry.getValue());
                 trainViewMap.remove(entry.getKey());
             }
         }
 
-        for (Train train : trainsByLine) {
-            Log.i(TAG, train.toString());
+        for (final LiveTrain liveTrain : trainsByLine) {
+            Log.i(TAG, liveTrain.toString());
 
-            View view = trainViewMap.get(train);
+            View view = trainViewMap.get(liveTrain);
             if(view == null) {
                 int childCount = mainContainerCL.getChildCount();
                 view = inflate(this, R.layout.train, null);
                 view.setId(ViewIdGenerator.generateViewId());
                 mainContainerCL.addView(view, childCount);
-                trainViewMap.put(train, view);
+                trainViewMap.put(liveTrain, view);
+                Button button = view.findViewById(R.id.train_name);
+                button.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent(getBaseContext(), TrainActivity.class);
+                        intent.putExtra(TRAIN_ID, liveTrain.getId());
+                        startActivity(intent);
+                    }
+                });
             }
             ImageView trainIv = view.findViewById(R.id.train);
             ConstraintLayout boxCl = view.findViewById(R.id.box);
+            @SuppressLint("CutPasteId")
             Button trainNameBtn = view.findViewById(R.id.train_name);
             TextView trainSpeedTv = view.findViewById(R.id.train_speed);
 
-            if(4 < train.getVelocity()) {
+            if(4 < liveTrain.getVelocity()) {
                 trainIv.setImageResource(R.drawable.train_down);
                 boxCl.setBackgroundResource(R.drawable.train_bubble_down);
                 int color = getResources().getColor(R.color.trainDown);
                 trainNameBtn.setTextColor(color);
                 trainSpeedTv.setTextColor(color);
-            } else if(-4 <= train.getVelocity()) {
+            } else if(-4 <= liveTrain.getVelocity()) {
                 trainIv.setImageResource(R.drawable.train);
                 boxCl.setBackgroundResource(R.drawable.train_bubble);
                 int color = getResources().getColor(R.color.train);
@@ -303,13 +320,13 @@ public class MainActivity extends AppCompatActivity {
                 trainSpeedTv.setTextColor(color);
             }
 
-            trainNameBtn.setText("Unnamed Train");
-            trainSpeedTv.setText((Math.round(Math.abs(train.getVelocity())*3.6*100)/100) + "km/h");
+            trainNameBtn.setText(liveTrain.getName() != null ? liveTrain.getName() : "Unnamed Train");
+            trainSpeedTv.setText((Math.round(Math.abs(liveTrain.getVelocity())*3.6*100)/100) + "km/h");
 
             ConstraintSet set = new ConstraintSet();
             set.clone(mainContainerCL);
-            double extraDistance = train.getVelocity() / 1000 * ((time - train.getTimestamp()) / 1000.0);
-            int margin = (int) (100 * (train.getPosition() + extraDistance));
+            double extraDistance = liveTrain.getVelocity() / 1000 * ((time - liveTrain.getTimestamp()) / 1000.0);
+            int margin = (int) (100 * (liveTrain.getPosition() + extraDistance));
             set.connect(view.getId(), ConstraintSet.TOP, mainContainerCL.getId(), ConstraintSet.TOP, margin);
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
@@ -324,7 +341,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateStationViews() {
         int max = 0;
-        for (Station station : stations) {
+        for (final Station station : stations) {
             if(station.getLineId() != lineId) {
                 continue;
             }
@@ -333,6 +350,15 @@ public class MainActivity extends AppCompatActivity {
             View view = inflate(this, R.layout.station, null);
             Button stationNameButton = view.findViewById(R.id.name);
             stationNameButton.setText(station.getName());
+            stationNameButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(getBaseContext(), StationActivity.class);
+                    intent.putExtra(STATION_ID, station.getId());
+                    startActivity(intent);
+                }
+            });
+
             view.setId(ViewIdGenerator.generateViewId());
             //ConstraintLayout.LayoutParams lp = new ConstraintLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
             //lp.topToTop = (int) station.getPosition();
@@ -356,6 +382,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void removeAllViews() {
+        trainViewMap.clear();
         mainContainerCL.removeViews(1, mainContainerCL.getChildCount() - 1);
     }
 
@@ -369,6 +396,35 @@ public class MainActivity extends AppCompatActivity {
                     scrollView.fullScroll(View.FOCUS_UP);
                 }
             });
+        }
+    }
+
+    private void updateUserView() {
+        UserPoint userPoint = Location.getInstance(this).getUserPoint();
+        if(userPoint != null && userPoint.getLineId() == lineId) {
+            if(userPointView == null) {
+                userPointView = inflate(this, R.layout.user_point, null);
+                userPointView.setId(ViewIdGenerator.generateViewId());
+                mainContainerCL.addView(userPointView,1);
+//                Button stationNameButton = userPointView.findViewById(R.id.name);
+//            stationNameButton.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View v) {
+//                    Intent intent = new Intent(getBaseContext(), StationActivity.class);
+//                    intent.putExtra(STATION_ID, station.getId());
+//                    startActivity(intent);
+//                }
+//            });
+            }
+//            stationNameButton.setText(station.getName());
+            ConstraintSet set = new ConstraintSet();
+            set.clone(mainContainerCL);
+            int margin = 100 * ((int) userPoint.getPosition());
+            set.connect(userPointView.getId(), ConstraintSet.TOP, mainContainerCL.getId(), ConstraintSet.TOP, margin);
+            set.applyTo(mainContainerCL);
+        } else if(userPointView != null) {
+            mainContainerCL.removeView(userPointView);
+            userPointView = null;
         }
     }
 
