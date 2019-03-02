@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#008577</color>
+    <color name="colorPrimaryDark">#00574B</color>
+    <color name="colorAccent">#D81B60</color>
+    <color name="transparent">#00000000</color>
+    <color name="seaBlue">#01a7e3</color>
+    <color name="train">#acafb4</color>
+    <color name="trainUp">#d58031</color>
+    <color name="trainDown">#744b7b</color>
+</resources>
