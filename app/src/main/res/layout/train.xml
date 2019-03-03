@@ -32,7 +32,7 @@
             app:layout_constraintStart_toStartOf="@id/box"
             android:layout_margin="0dp"
             android:text="Unnamed Train"
-            tools:ignore="ContentDescription"
+            tools:ignore="ContentDescription,HardcodedText"
             style="?android:attr/borderlessButtonStyle"
             android:textSize="12sp"
             android:textColor="@color/train"
@@ -46,7 +46,8 @@
             app:layout_constraintStart_toStartOf="@id/box"
             android:textSize="18sp"
             android:text="0 km/h"
-            android:textColor="@color/train" />
+            android:textColor="@color/train"
+            tools:ignore="HardcodedText" />
 
     </android.support.constraint.ConstraintLayout>
 

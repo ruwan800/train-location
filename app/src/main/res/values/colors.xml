@@ -8,4 +8,5 @@
     <color name="train">#acafb4</color>
     <color name="trainUp">#d58031</color>
     <color name="trainDown">#744b7b</color>
+    <color name="white">#ffffff</color>
 </resources>

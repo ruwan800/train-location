@@ -28,7 +28,7 @@
         app:layout_constraintStart_toEndOf="@+id/station"
         android:text="Mirigama"
         android:textSize="16sp"
-        tools:ignore="ContentDescription"
+        tools:ignore="ContentDescription,HardcodedText"
         style="?android:attr/borderlessButtonStyle"/>
 
 
